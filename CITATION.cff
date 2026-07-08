@@ -1,0 +1,24 @@
+cff-version: 1.2.0
+message: "If you use this software or benchmark results, please cite it as below."
+title: "Learning-Based Adaptive Navigation Controller for Unmanned Ground Vehicles"
+authors:
+  - family-names: "[Your Last Name]"
+    given-names: "[Your First Name]"
+date-released: 2026-07-08
+version: "1.0.0"
+license: MIT
+repository-code: "https://github.com/[your-username]/learning-navigation"
+abstract: >
+  An open-source benchmark of state estimation (EKF/UKF/Factor Graph),
+  global planning (A*/Theta*/Hybrid A*/RRT*/MPPI), path-tracking control
+  (PID/Pure Pursuit/Stanley/NMPC), and learned adaptive control (CEM,
+  PPO/SAC-ready) for unmanned ground vehicles, with a closed-loop
+  robustness study quantifying the effect of state-estimation error on
+  control performance.
+keywords:
+  - robotics
+  - autonomous navigation
+  - model predictive control
+  - state estimation
+  - reinforcement learning
+  - ROS2

@@ -1,0 +1,24 @@
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.DS_Store
+
+# generated results (reproducible via `make bench`, not source-controlled)
+benchmarks/plots/*.png
+benchmarks/*.csv
+paper_report.pdf
+
+# RL training artifacts
+rl/tb/
+rl/*.zip
+*.mcap
+
+# ROS2
+ros2_ws/build/
+ros2_ws/install/
+ros2_ws/log/
+
+# editors
+.vscode/
+.idea/

@@ -1,0 +1,5 @@
+# GPU stage — full PPO/SAC training (not needed for the CPU research layer)
+-r requirements.txt
+stable-baselines3==2.4.0
+torch==2.5.1
+tensorboard==2.18.0

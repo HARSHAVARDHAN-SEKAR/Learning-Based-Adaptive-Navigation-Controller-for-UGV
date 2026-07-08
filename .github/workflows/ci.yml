@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run module verification suite
+        run: python3 tests/test_all_modules.py
+
+      - name: Smoke-test estimation benchmark (reduced seeds)
+        run: |
+          python3 - << 'PY'
+          import sys; sys.path.insert(0, '.')
+          from benchmarks.run_estimation import run_seed
+          err, truth = run_seed(0)
+          assert truth.shape[1] == 800
+          print('estimation smoke test OK')
+          PY
+
+      - name: Smoke-test planner benchmark
+        run: |
+          python3 - << 'PY'
+          import sys; sys.path.insert(0, '.')
+          from planners.planners import GridMap, astar, hybrid_astar
+          m = GridMap(seed=1)
+          assert astar(m) is not None
+          assert hybrid_astar(m) is not None
+          print('planner smoke test OK')
+          PY
+
+  docker-build:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Docker image (fails if code inside is broken)
+        run: docker build -t ugv-nav-research .

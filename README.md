@@ -1,5 +1,36 @@
 # Learning-Based Adaptive Navigation Controller for UGVs
 
+[![CI](https://img.shields.io/badge/CI-GitHub_Actions-2088FF?logo=github-actions&logoColor=white)](.github/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python 3.10|3.11](https://img.shields.io/badge/python-3.10%20%7C%203.11-blue)](requirements.txt)
+[![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)](Dockerfile)
+[![ROS2](https://img.shields.io/badge/ROS2-Humble-22314E?logo=ros&logoColor=white)](ros2_ws/)
+
+> Push the badges live by connecting this repo to GitHub Actions — the
+> workflow file is already in `.github/workflows/ci.yml` and passes
+> locally (`make test`).
+
+## Evidence Status
+
+| Artifact | Status | Where |
+|---|---|---|
+| Source code, 6 modules | ✅ tested, all pass | `tests/test_all_modules.py` |
+| Benchmark results (4 studies) | ✅ reproduced from clean checkout | `benchmarks/*.csv` |
+| Comparison charts (5) | ✅ regenerated, committed | `benchmarks/plots/` |
+| Technical report (PDF) | ✅ auto-generated from results | `paper_report.pdf` |
+| Dockerfile (research layer) | ✅ builds + self-tests | `Dockerfile` |
+| Dockerfile (ROS2 layer) | ⚠️ written, not build-tested (needs ROS2 host/CI runner) | `ros2_ws/Dockerfile` |
+| CI workflow | ✅ passes locally, not yet run on GitHub | `.github/workflows/ci.yml` |
+| ROS2 launch + node | ⚠️ written, not run against a live ROS2 graph | `launch/`, `ros2_ws/` |
+| Demo video | 🔲 script ready, not recorded | `docs/VIDEO_SCRIPT.md` |
+| PPO/SAC training | 🔲 env smoke-tested, not trained (GPU stage) | `rl/ppo_training.py` |
+
+This table is here on purpose — a repo that quietly implies everything
+works is less credible than one that states exactly what's proven and
+what isn't.
+
+
+
 Full open-source research pipeline: **sensor simulation → state estimation →
 planner benchmark → controller benchmark → learning layer → ROS2 deployment.**
 Every result below was produced by running the code in this repo (fixed seeds).
@@ -78,11 +109,31 @@ learning_navigation/
 ## Run Everything
 
 ```bash
-pip install numpy scipy matplotlib pandas casadi filterpy
-python3 benchmarks/run_estimation.py     # Stage 1  (~1 min)
-python3 benchmarks/run_planners.py       # Stage 2  (~1 min)
-python3 benchmarks/run_full_flow.py      # Stage 3+4, trains CEM (~5 min)
+pip install -r requirements.txt
+make bench      # all 4 benchmark studies, ~10 min total
+make report     # + PDF report + architecture diagram
 ```
+
+Or with Docker (no local Python setup needed):
+```bash
+make docker-build
+make docker-run
+```
+
+## Repository Evidence
+
+- **CI:** `.github/workflows/ci.yml` — runs the module test suite and two
+  smoke tests on every push, on Python 3.10 and 3.11
+- **Docker:** `Dockerfile` builds the research layer and runs the full
+  test suite *as part of the build* — a broken build means broken code
+- **Reproducibility:** `Makefile` — `make bench` is the entire pipeline,
+  one command, same results every time (fixed seeds throughout)
+- **ROS2:** `launch/navigation_demo.launch.py` + `ros2_ws/Dockerfile` —
+  see `docs/ROS2_DEMO.md` for the exact bring-up sequence and the one
+  known integration step left to do (package.xml for the controller node)
+- **Video:** `docs/VIDEO_SCRIPT.md` — shot-by-shot script for a 2:30 demo
+  video, written to lead with the robustness finding
+
 
 ## What Runs Where
 

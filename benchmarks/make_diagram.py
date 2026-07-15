@@ -92,7 +92,9 @@ box(0.8, 1.4, 5.2, 1.7, '7. ROS2 DEPLOYMENT',
      'PPO/SAC training, 2,400-episode benchmark matrix'],
     C['ros'], 'colcon-ready,\nJetson target')
 
-fig.savefig('/home/claude/learning_navigation/benchmarks/plots/'
-            'architecture_flow.png', dpi=160, bbox_inches='tight',
-            facecolor='white')
+import os
+OUT = os.path.join(os.path.dirname(__file__), 'plots')
+os.makedirs(OUT, exist_ok=True)
+fig.savefig(os.path.join(OUT, 'architecture_flow.png'), dpi=160,
+            bbox_inches='tight', facecolor='white')
 print('diagram saved')

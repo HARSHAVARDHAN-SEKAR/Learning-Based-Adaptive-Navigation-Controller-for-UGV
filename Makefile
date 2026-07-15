@@ -15,6 +15,9 @@ bench: test
 	python3 benchmarks/run_full_flow.py
 	python3 benchmarks/run_robustness.py
 
+live:
+	python3 benchmarks/live_simulation.py --controller $(or $(CONTROLLER),mpc)
+
 report: bench
 	python3 benchmarks/make_report.py
 	python3 benchmarks/make_diagram.py

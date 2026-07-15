@@ -22,3 +22,10 @@ ros2_ws/log/
 # editors
 .vscode/
 .idea/
+
+# laboratory session artifacts
+logs/run_*/
+results/bench_*/
+reports/run_*
+videos/*.gif
+videos/*.mp4

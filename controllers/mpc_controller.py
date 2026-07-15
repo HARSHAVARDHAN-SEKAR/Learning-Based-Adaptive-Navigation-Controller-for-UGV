@@ -23,6 +23,7 @@ class MPC:
         self._build()
         self.w_prev = None
         self.prog_idx = 0          # persistent path progress (no lobe jumps)
+        self.closed = True         # False for open start->goal paths
 
     def _build(self):
         X = ca.SX.sym('X', NX, N + 1)
@@ -81,20 +82,29 @@ class MPC:
         """
         n = len(path)
         W = 60                                    # search window [pts]
-        offs = (self.prog_idx + np.arange(-5, W)) % n
+        if self.closed:
+            offs = (self.prog_idx + np.arange(-5, W)) % n
+        else:
+            offs = np.clip(self.prog_idx + np.arange(-5, W), 0, n - 1)
         d = np.linalg.norm(path[offs] - x0[:2], axis=1)
         idx = int(offs[int(np.argmin(d))])
         self.prog_idx = idx
 
         xr = np.zeros((NX, N + 1))
         for k in range(N + 1):
-            nxt = (idx + 1) % n
+            nxt = (idx + 1) % n if self.closed else min(idx + 1, n - 1)
             tang = path[nxt] - path[idx]
+            if np.linalg.norm(tang) < 1e-9:
+                tang = path[idx] - path[idx - 1]
             xr[:, k] = [path[idx, 0], path[idx, 1],
-                        np.arctan2(tang[1], tang[0]), self.v_ref, 0.0]
+                        np.arctan2(tang[1], tang[0]),
+                        self.v_ref if (self.closed or idx < n - 2) else 0.0,
+                        0.0]
             s, target = 0.0, self.v_ref * TS
             while s < target:
-                nxt = (idx + 1) % n
+                nxt = (idx + 1) % n if self.closed else min(idx + 1, n - 1)
+                if not self.closed and nxt == idx:
+                    break                        # hold at open-path end
                 s += np.linalg.norm(path[nxt] - path[idx])
                 idx = nxt
         return xr

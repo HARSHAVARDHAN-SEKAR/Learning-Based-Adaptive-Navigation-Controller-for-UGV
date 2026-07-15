@@ -32,7 +32,23 @@ def main():
     assert obs.shape == env.observation_space.shape
     obs, r, *_ = env.step(env.action_space.sample())
     assert np.all(np.isfinite(obs)) and np.isfinite(r)
-    print('ALL 6 MODULES PASS')
+
+    # 7. runtime laboratory: engine + safety + DWA reach goal headless
+    from runtime.engine import Engine, load_config
+    cfg = load_config(); cfg.update(world='obstacles', controller='dwa')
+    e = Engine(cfg)
+    for _ in range(2400):
+        e.tick()
+        if e.done:
+            break
+    assert e.done, 'runtime lab: DWA failed to reach goal'
+    cfg2 = load_config()                      # track world, MPC + EKF
+    e2 = Engine(cfg2)
+    for _ in range(100):
+        e2.tick()
+    m = e2.bus.latest['/metrics']
+    assert abs(m['e_ct']) < 0.5 and np.isfinite(m['est_err'])
+    print('ALL 7 MODULES PASS')
 
 if __name__ == '__main__':
     main()

@@ -1,0 +1,13 @@
+{
+  "world": "track",
+  "planner": "hybrid_astar",
+  "controller": "mpc",
+  "estimator": "ekf",
+  "shadow_estimators": true,
+  "use_ground_truth": false,
+  "ai": "none",
+  "dt": 0.05,
+  "seed": 0,
+  "map_seed": 1,
+  "n_obstacles": 8
+}

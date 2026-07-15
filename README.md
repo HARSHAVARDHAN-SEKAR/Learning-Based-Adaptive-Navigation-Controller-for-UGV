@@ -106,6 +106,20 @@ learning_navigation/
 └── ros2_ws/src/navigation_controller/controller_node.py (deployment)
 ```
 
+## Navigation Laboratory (V2 — interactive runtime)
+
+```bash
+sudo apt install python3-tk   # once
+make lab                      # dashboard + live windows (track world)
+make lab-obstacles            # plan -> drive -> goal with safety layer
+make lab-bench                # multi-episode benchmark manager
+```
+Node-based runtime (ROS2-style topics), 6 swappable controllers incl. a
+DWA local planner with Nav2-style candidate visualization, 3 estimators
+switchable live, a graduated safety filter, session logging with replay
+(`runtime/replay.py`) and per-run PDF reports (`runtime/report.py`).
+Full guide: `docs/LAB_GUIDE.md`.
+
 ## Run Everything
 
 ```bash

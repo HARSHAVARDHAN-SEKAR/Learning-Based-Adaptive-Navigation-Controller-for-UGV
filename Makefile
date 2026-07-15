@@ -18,6 +18,15 @@ bench: test
 live:
 	python3 benchmarks/live_simulation.py --controller $(or $(CONTROLLER),mpc)
 
+lab:
+	python3 runtime/dashboard.py $(ARGS)
+
+lab-obstacles:
+	python3 runtime/dashboard.py --world obstacles
+
+lab-bench:
+	python3 runtime/benchmark.py --world obstacles --episodes 5
+
 report: bench
 	python3 benchmarks/make_report.py
 	python3 benchmarks/make_diagram.py

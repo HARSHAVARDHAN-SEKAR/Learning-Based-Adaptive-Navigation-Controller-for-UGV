@@ -23,7 +23,7 @@
 | CI workflow | PARTIAL — passes locally, not yet run on GitHub | `.github/workflows/ci.yml` |
 | ROS2 launch + node | PARTIAL — written, not run against a live ROS2 graph | `launch/`, `ros2_ws/` |
 | **Navigation Laboratory (V2)** | **DONE — GUI verified on independent hardware, 8+ live sessions logged** | `runtime/`, `docs/LAB_GUIDE.md` |
-| Demo video | TODO — script ready, not recorded | `docs/VIDEO_SCRIPT.md` |
+| Demo video | Done — script ready, recorded | `docs/test.mp4` |
 | PPO/SAC training | TODO — env smoke-tested, not trained (GPU stage) | `rl/ppo_training.py` |
 
 This table is here on purpose — a repo that quietly implies everything

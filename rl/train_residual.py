@@ -56,14 +56,33 @@ class ResidualEnv(gym.Env):
 
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
-        self._seed += 1
-        cfg = load_config()
-        cfg.update(world=self.world, controller=self.base,
-                   seed=self._seed, map_seed=self._seed + 1)
-        self.engine = Engine(cfg)
+        # A planner (esp. Hybrid A* on tightly-cluttered random maps) can
+        # legitimately find no path for some map seeds. During training
+        # this must NEVER crash the run -- just skip to the next seed.
+        # Bounded retry count so a systematic config error still surfaces
+        # as an error instead of spinning forever.
+        for _ in range(20):
+            self._seed += 1
+            cfg = load_config()
+            cfg.update(world=self.world, controller=self.base,
+                      seed=self._seed, map_seed=self._seed + 1)
+            try:
+                self.engine = Engine(cfg)
+                break
+            except RuntimeError:
+                continue
+        else:
+            raise RuntimeError(
+                '20 consecutive map seeds failed to plan -- this is a '
+                'real config problem (e.g. too many obstacles), not bad luck')
         self._pending_residual = np.zeros(2)
         self._patch_controller()
         self.k = 0
+        # goal-progress baseline (obstacle world only -- see step() below
+        # for why raw velocity alone is not a safe reward signal here)
+        self._prev_dist = (
+            float(np.linalg.norm(self.engine.sim.x[:2] - self.engine.world.goal))
+            if self.world == 'obstacles' else None)
         return self._obs(), {}
 
     def _patch_controller(self):
@@ -99,7 +118,28 @@ class ResidualEnv(gym.Env):
         m = self.engine.bus.latest.get('/metrics', {})
         e_ct = m.get('e_ct', 0.0)
         v = m.get('v', 0.0)
-        r = 1.0 * v - 3.0 * e_ct ** 2 - 0.02 * float(np.sum(action ** 2))
+
+        if self.world == 'obstacles':
+            # Raw velocity is NOT a safe reward here: a policy can rack up
+            # huge cumulative reward by driving fast in tight, easy-to-
+            # track loops or oscillations that never advance toward the
+            # goal -- exactly the failure this replaced (0% success with
+            # BETTER cross-track error than the base controller, because
+            # the policy was camping on an easy segment instead of
+            # covering the harder ground near the goal). Reward actual
+            # advancement instead: distance-to-goal reduction each tick.
+            dist = float(np.linalg.norm(
+                self.engine.sim.x[:2] - self.engine.world.goal))
+            progress = (self._prev_dist - dist
+                       if self._prev_dist is not None else 0.0)
+            self._prev_dist = dist
+            r = (4.0 * progress - 3.0 * e_ct ** 2
+                 - 0.02 * float(np.sum(action ** 2)) - 0.05)  # time pressure
+        else:
+            # Closed-loop track has no single goal to measure progress
+            # against; speed around the loop is a reasonable proxy here.
+            r = 1.0 * v - 3.0 * e_ct ** 2 - 0.02 * float(np.sum(action ** 2))
+
         max_t = 40.0 if self.world == 'track' else 120.0
         term = bool(self.engine.done) or abs(e_ct) > 1.0
         trunc = self.engine.sim.t >= max_t
@@ -118,7 +158,12 @@ def evaluate(base, world, model=None, episodes=5):
         for ep in range(episodes):
             cfg = load_config()
             cfg.update(world=world, controller=base, seed=ep, map_seed=ep + 1)
-            eng = Engine(cfg)
+            try:
+                eng = Engine(cfg)
+            except RuntimeError:
+                results[key].append({'rms_ect': np.nan, 'success': False,
+                                     'time_s': 0.0})
+                continue
             ects = []
             max_t = 40.0 if world == 'track' else 120.0
             while eng.sim.t < max_t and not eng.done:

@@ -7,7 +7,7 @@ authors:
 date-released: 2026-07-08
 version: "1.0.0"
 license: MIT
-repository-code: "https://github.com/[your-username]/learning-navigation"
+repository-code: "https://github.com/[HARSHAVARDHAN-SEKAR/learning-navigation"
 abstract: >
   An open-source benchmark of state estimation (EKF/UKF/Factor Graph),
   global planning (A*/Theta*/Hybrid A*/RRT*/MPPI), path-tracking control

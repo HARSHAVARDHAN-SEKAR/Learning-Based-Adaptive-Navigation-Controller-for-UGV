@@ -150,43 +150,50 @@ class ResidualEnv(gym.Env):
 
 def evaluate(base, world, model=None, episodes=5):
     """Compare base controller alone vs base+residual. Same metric
-    definitions as benchmarks/run_full_flow.py for direct comparability."""
+    definitions as benchmarks/run_full_flow.py for direct comparability.
+
+    Reuses ResidualEnv's tick mechanism rather than re-implementing the
+    control loop by hand. An earlier hand-rolled version called
+    engine.tick() and then separately re-published /cmd_raw with the
+    residual added -- that re-publish re-triggered the safety layer
+    AFTER Engine's own goal-reached braking command had already been
+    published, silently overwriting the brake with an ordinary driving
+    command every time. The robot would sail straight through the goal
+    at full speed and never stop, regardless of what the model learned
+    -- verified with a mock zero-residual model that still failed 100%
+    of the time. ResidualEnv doesn't have this bug: it patches
+    ctrl.tick() itself, so the residual is applied BEFORE Engine's
+    goal-check runs, not after.
+
+    Note: success rate here is not directly comparable to
+    benchmarks/runtime/benchmark.py's -- this function inherits
+    ResidualEnv's seed-skip-on-planner-failure behavior (required so
+    training doesn't crash on a bad map), so a failed-to-plan seed is
+    silently replaced rather than counted as a failure. benchmark.py
+    counts it as one. Same seed, different accounting.
+    """
     results = {'base': [], 'residual': []}
     for use_model, key in ((False, 'base'), (model is not None, 'residual')):
         if key == 'residual' and model is None:
             continue
         for ep in range(episodes):
-            cfg = load_config()
-            cfg.update(world=world, controller=base, seed=ep, map_seed=ep + 1)
+            env = ResidualEnv(base, world, seed=ep - 1)   # reset() does +=1
             try:
-                eng = Engine(cfg)
+                obs, _ = env.reset()
             except RuntimeError:
                 results[key].append({'rms_ect': np.nan, 'success': False,
                                      'time_s': 0.0})
                 continue
             ects = []
-            max_t = 40.0 if world == 'track' else 120.0
-            while eng.sim.t < max_t and not eng.done:
-                if use_model:
-                    gt = eng.bus.latest.get('/sim/state')
-                    m = eng.bus.latest.get('/metrics', {})
-                    if gt is not None:
-                        obs = residual_observation(gt['x'], m)
-                        act, _ = model.predict(obs, deterministic=True)
-                        eng.ctrl.ai = None
-                        eng.tick()
-                        msg = eng.bus.latest[eng.ctrl.out_topic]
-                        a = msg['a'] + act[0] * ACTION_LIMITS[0]
-                        dd = msg['ddelta'] + act[1] * ACTION_LIMITS[1]
-                        eng.bus.publish(eng.ctrl.out_topic,
-                                        {**msg, 'a': a, 'ddelta': dd})
-                    else:
-                        eng.tick()
-                else:
-                    eng.tick()
-                mm = eng.bus.latest.get('/metrics')
+            term = trunc = False
+            while not (term or trunc):
+                action = (model.predict(obs, deterministic=True)[0]
+                         if use_model else np.zeros(2, dtype=np.float32))
+                obs, _, term, trunc, _ = env.step(action)
+                mm = env.engine.bus.latest.get('/metrics')
                 if mm and mm['t'] > 0.5:
                     ects.append(mm['e_ct'])
+            eng = env.engine
             results[key].append({
                 'rms_ect': float(np.sqrt(np.mean(np.square(ects)))) if ects else np.nan,
                 'success': eng.done or world == 'track',

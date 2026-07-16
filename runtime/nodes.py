@@ -153,6 +153,9 @@ class ControllerNode:
         elif self.name == 'dwa':
             from control.dwa import DWA
             self._impl = DWA(self.world)
+        elif self.name == 'rpp':
+            from control.rpp import regulated_pure_pursuit
+            self._impl = regulated_pure_pursuit
         else:
             self._impl = self.GEOMETRIC[self.name]
 
@@ -173,6 +176,8 @@ class ControllerNode:
             u, _ = self._impl.solve(x_ctrl, self.path)
         elif self.name == 'adaptive_mpc':
             u, _ = self._impl.solve(x_ctrl)
+        elif self.name == 'rpp':
+            u = self._impl(x_ctrl, self.path, world=self.world)
         else:
             u = self._impl(x_ctrl, self.path)
         if self.name == 'dwa':                    # candidates for the viz
@@ -181,10 +186,9 @@ class ControllerNode:
                                self._impl.candidates if ok][:20],
                 'best': self._impl.best_traj})
         if self.ai is not None:
-            obs = np.array([x_ctrl[3], x_ctrl[4],
-                            *self.bus.latest.get('/metrics',
-                                                 {'e_ct': 0, 'e_psi': 0}
-                                                 ).values()][:8])
+            from rl.residual_obs import residual_observation
+            obs = residual_observation(x_ctrl,
+                                       self.bus.latest.get('/metrics', {}))
             u = self.ai.correct(np.asarray(u, float), obs)
         self.solve_ms = (time.perf_counter() - t0) * 1e3
         self.bus.publish(self.out_topic,

@@ -17,7 +17,14 @@ ALL = ['pid', 'pure_pursuit', 'stanley', 'mpc', 'adaptive_mpc', 'dwa']
 
 def episode(cfg, seed):
     cfg = dict(cfg, seed=seed, map_seed=seed + 1)
-    e = Engine(cfg)
+    try:
+        e = Engine(cfg)
+    except RuntimeError as exc:
+        # A planner (esp. Hybrid A* on tightly-cluttered random maps) can
+        # legitimately find no path. That's a failed EPISODE, not a
+        # crashed BENCHMARK — record it and keep going.
+        return {'success': False, 'time_s': 0.0, 'rms_ect': np.nan,
+               'planner_failed': str(exc)}
     ects = []
     max_t = 120.0 if cfg['world'] == 'obstacles' else 40.0
     while e.sim.t < max_t and not e.done:
@@ -54,7 +61,11 @@ def main():
         for ep in range(args.episodes):
             k += 1
             print(f'[{k}/{total}] {ctrl} episode {ep + 1} ...', flush=True)
-            res.append(episode(dict(base, controller=ctrl), seed=ep))
+            r = episode(dict(base, controller=ctrl), seed=ep)
+            if r.get('planner_failed'):
+                print(f'    -> planner failed to find a path on this map '
+                      f'(seed={ep+1}); counted as episode failure')
+            res.append(r)
         rows.append({
             'controller': ctrl,
             'success_%': 100.0 * np.mean([r['success'] for r in res]),

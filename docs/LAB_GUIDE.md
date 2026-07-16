@@ -66,6 +66,17 @@ through it — RL never commands the robot directly.
   `rl/ppo_residual.zip` if you've trained one (GPU stage), otherwise runs
   the base controller with a one-time notice. Residuals are clipped to
   ±[0.5 m/s², 0.3 rad/s] and still pass the safety filter.
+- Train one: `pip install -r requirements-rl.txt && python3 rl/train_residual.py
+  --base stanley --algo ppo --world obstacles` — trains against the real
+  Engine, evaluates base-vs-residual automatically, saves to
+  `rl/ppo_residual.zip`. Env is smoke-tested (`tests/test_all_modules.py`
+  module 8); training itself needs your GPU.
+
+## Local planners now available
+
+`dwa` (Nav2-style DWB, candidate visualization) and `rpp` (Regulated Pure
+Pursuit — Nav2's actual default, curvature/proximity/goal-approach speed
+regulation). Both selectable from the dashboard or `--controller`.
 
 ## What was deliberately NOT included (V3+ roadmap)
 

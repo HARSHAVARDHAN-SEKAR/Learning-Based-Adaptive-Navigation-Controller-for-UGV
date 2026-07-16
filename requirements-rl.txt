@@ -1,5 +1,10 @@
-# GPU stage — full PPO/SAC training (not needed for the CPU research layer)
+# GPU stage — full PPO/SAC training (not needed for the CPU research layer).
+#
+# Versions intentionally NOT pinned here: stable-baselines3==2.4.0 hard-caps
+# gymnasium<1.1.0, which conflicts with gymnasium==1.3.0 in requirements.txt.
+# Letting pip resolve the latest mutually-compatible stable-baselines3/torch
+# avoids re-breaking this every time either project ships a release.
 -r requirements.txt
-stable-baselines3==2.4.0
-torch==2.5.1
-tensorboard==2.18.0
+stable-baselines3>=2.4.0
+torch>=2.5.1
+tensorboard>=2.18.0

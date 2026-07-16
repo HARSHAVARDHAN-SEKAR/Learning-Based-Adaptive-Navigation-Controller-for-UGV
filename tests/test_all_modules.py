@@ -48,7 +48,16 @@ def main():
         e2.tick()
     m = e2.bus.latest['/metrics']
     assert abs(m['e_ct']) < 0.5 and np.isfinite(m['est_err'])
-    print('ALL 7 MODULES PASS')
+
+    # 8. RL residual env: obs/action API + reward finiteness
+    from rl.train_residual import ResidualEnv
+    renv = ResidualEnv('stanley', 'track')
+    obs, _ = renv.reset()
+    assert obs.shape == (8,)
+    obs, r, *_ = renv.step(renv.action_space.sample())
+    assert np.all(np.isfinite(obs)) and np.isfinite(r)
+
+    print('ALL 8 MODULES PASS')
 
 if __name__ == '__main__':
     main()

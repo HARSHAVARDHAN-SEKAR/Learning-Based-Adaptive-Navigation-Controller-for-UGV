@@ -82,7 +82,13 @@ class ObstacleWorld:
         return self.path
 
     def goal_reached(self, x):
-        return bool(np.linalg.norm(x[:2] - self.goal) < 0.3)
+        # 0.4 m, not 0.3 m: at 2 m/s and 20 Hz control, a controller can
+        # travel ~10 cm between ticks, so a tight capture radius lets a
+        # fast approach narrowly overshoot it, drive past the goal, and
+        # follow the path all the way to its artificial tail extension --
+        # parking 2 m past the real goal with no way back. Found via a
+        # reproducible adaptive_mpc stall: missed capture by 0.028 m.
+        return bool(np.linalg.norm(x[:2] - self.goal) < 0.4)
 
 
 def make_world(name, cfg=None):

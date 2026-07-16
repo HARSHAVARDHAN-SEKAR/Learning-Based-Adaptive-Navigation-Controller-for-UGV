@@ -38,9 +38,16 @@ class AdaptiveMPC:
         self.path = path
 
     def solve(self, x):
-        # max curvature over ~0.7 m of lookahead (circular indexing)
+        # max curvature over ~0.7 m of lookahead. Circular wrap only for
+        # closed tracks -- on an OPEN path (obstacle world), wrapping past
+        # the goal picks up curvature from near the spawn point, causing
+        # spurious speed collapse right when the robot should be finishing.
         n = len(self.kappa)
-        idxs = (self.mpc.prog_idx + np.arange(26)) % n
+        closed = getattr(self.mpc, 'closed', True)
+        if closed:
+            idxs = (self.mpc.prog_idx + np.arange(26)) % n
+        else:
+            idxs = np.clip(self.mpc.prog_idx + np.arange(26), 0, n - 1)
         k_ahead = np.max(self.kappa[idxs])
         self.mpc.v_ref = np.clip(
             self.v_base / (1.0 + self.k_curv * k_ahead), 0.4, 2.0)

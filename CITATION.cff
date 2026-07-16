@@ -2,8 +2,8 @@ cff-version: 1.2.0
 message: "If you use this software or benchmark results, please cite it as below."
 title: "Learning-Based Adaptive Navigation Controller for Unmanned Ground Vehicles"
 authors:
-  - family-names: "[Your Last Name]"
-    given-names: "[Your First Name]"
+  - family-names: "[SEKAR]"
+    given-names: "[HARSHAVARDHAN]"
 date-released: 2026-07-08
 version: "1.0.0"
 license: MIT

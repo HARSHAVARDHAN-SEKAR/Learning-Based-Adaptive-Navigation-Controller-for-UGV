@@ -29,3 +29,4 @@ results/bench_*/
 reports/run_*
 videos/*.gif
 videos/*.mp4
+.venv/

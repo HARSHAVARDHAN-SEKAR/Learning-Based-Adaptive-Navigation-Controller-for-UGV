@@ -85,3 +85,9 @@ vehicles → `simulation/vehicle.py` + a controller adapter.
    A* outputs ~0.3 m spacing → reference raced at ~6 m/s and wrapped.
    Fix: all planner paths resampled to 0.025 m + explicit open-path mode
    (clamp, hold-at-end, terminal v_ref = 0) in the MPC.
+4. **Found during independent live GUI testing, not the batch pipeline:**
+   `planner=mppi` never reaches the goal. MPPI plans with an unconstrained
+   unicycle model; the vehicle is a bicycle model with ±0.5 rad steering
+   limit. Near tight turns MPPI proposes paths the vehicle can't physically
+   follow. Open issue — fix is to cap MPPI's angular rate to the vehicle's
+   turning limit before using it as a global planner.
